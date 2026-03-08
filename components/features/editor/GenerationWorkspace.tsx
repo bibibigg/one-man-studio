@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import pLimit from 'p-limit'
 
 import { useGenerationStore } from '@/lib/stores/generation'
+import { useEditorStore } from '@/lib/stores/editor'
 import { LIMITS } from '@/lib/utils/constants'
 import type { SceneGenState } from '@/lib/stores/generation'
 import type { EditorScene } from '@/types/editor'
@@ -25,6 +26,7 @@ async function runGenerationPipeline(
   scene: EditorScene,
   uploadedImageUrl: string | undefined,
   setSceneState: (id: string, state: Partial<SceneGenState>) => void,
+  updateComposition: (sceneId: string, updates: { durationFrames: number }) => void,
   signal: AbortSignal
 ): Promise<void> {
   if (signal.aborted) return
@@ -97,11 +99,15 @@ async function runGenerationPipeline(
       const statusData = (await statusRes.json()) as {
         status: 'processing' | 'completed' | 'failed'
         videoUrl?: string
+        durationFrames?: number
         error?: string
       }
 
       if (statusData.status === 'completed') {
         setSceneState(scene.id, { status: 'completed', videoUrl: statusData.videoUrl })
+        if (statusData.durationFrames) {
+          updateComposition(scene.id, { durationFrames: statusData.durationFrames })
+        }
         return
       }
       if (statusData.status === 'failed') {
@@ -121,6 +127,7 @@ async function runGenerationPipeline(
 export function GenerationWorkspace({ scenes }: GenerationWorkspaceProps) {
   const router = useRouter()
   const { scenes: genScenes, isGenerating, setSceneState, setIsGenerating } = useGenerationStore()
+  const { updateComposition } = useEditorStore()
   const [hasStarted, setHasStarted] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -182,12 +189,12 @@ export function GenerationWorkspace({ scenes }: GenerationWorkspaceProps) {
           limit(() => {
             // Read latest uploaded URL at execution time (not closure capture time)
             const uploadedUrl = useGenerationStore.getState().scenes[scene.id]?.imageUrl
-            return runGenerationPipeline(scene, uploadedUrl, setSceneState, controller.signal)
+            return runGenerationPipeline(scene, uploadedUrl, setSceneState, updateComposition, controller.signal)
           })
         )
       ).finally(() => setIsGenerating(false))
     },
-    [setIsGenerating, setSceneState]
+    [setIsGenerating, setSceneState, updateComposition]
   )
 
   const handleStartGeneration = useCallback(() => {

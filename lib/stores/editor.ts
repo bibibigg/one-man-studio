@@ -130,7 +130,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     return sceneOrder.reduce((total, id, i) => {
       const comp = compositions[id]
       const isLast = i === sceneOrder.length - 1
-      return total + comp.durationFrames - (isLast ? 0 : comp.transitionDurationFrames)
+      const overlap =
+        isLast || comp.transitionType === 'none' ? 0 : comp.transitionDurationFrames
+      return total + comp.durationFrames - overlap
     }, 0)
   },
 }))

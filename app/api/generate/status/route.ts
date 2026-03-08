@@ -48,11 +48,23 @@ export async function GET(request: Request): Promise<Response> {
 
     if (jobStatus.status === 'completed' && jobStatus.videoUrl) {
       // Save Kling CDN URL directly (re-uploading would risk serverless timeout)
+      const durationFrames = jobStatus.durationSeconds
+        ? Math.round(jobStatus.durationSeconds * 30)
+        : undefined
       await supabase
         .from('scenes')
-        .update({ status: 'completed', video_url: jobStatus.videoUrl, error_message: null })
+        .update({
+          status: 'completed',
+          video_url: jobStatus.videoUrl,
+          error_message: null,
+          ...(durationFrames !== undefined && { duration_frames: durationFrames }),
+        })
         .eq('id', sceneId)
-      return Response.json({ status: 'completed', videoUrl: jobStatus.videoUrl })
+      return Response.json({
+        status: 'completed',
+        videoUrl: jobStatus.videoUrl,
+        durationFrames,
+      })
     }
 
     if (jobStatus.status === 'failed') {

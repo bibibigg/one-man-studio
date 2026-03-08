@@ -16,10 +16,14 @@ function positionScenes(
     const from = currentFrame
     const isLast = i === scenes.length - 1
     // Clamp: transition must be shorter than the scene itself to prevent frame reversal
-    const transitionOut = isLast
-      ? 0
-      : Math.min(scene.transitionDurationFrames, scene.durationFrames - 1)
-    const transitionIn = i === 0 ? 0 : scenes[i - 1].transitionDurationFrames
+    const transitionOut =
+      isLast || scene.transitionType === 'none'
+        ? 0
+        : Math.min(scene.transitionDurationFrames, Math.max(0, scene.durationFrames - 1))
+    const transitionIn =
+      i === 0 || scenes[i - 1].transitionType === 'none'
+        ? 0
+        : scenes[i - 1].transitionDurationFrames
     currentFrame += scene.durationFrames - transitionOut
     return { ...scene, from, fadeInFrames: transitionIn, fadeOutFrames: transitionOut }
   })

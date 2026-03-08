@@ -5,6 +5,7 @@ import { createHmac } from 'crypto'
 export interface VideoJobStatus {
   status: 'processing' | 'completed' | 'failed'
   videoUrl?: string
+  durationSeconds?: number
   error?: string
 }
 
@@ -151,7 +152,11 @@ class KlingProvider implements VideoProvider {
     const { task_status, task_status_msg, task_result } = res.data
 
     if (task_status === 'succeed') {
-      return { status: 'completed', videoUrl: task_result?.videos?.[0]?.url }
+      const video = task_result?.videos?.[0]
+      const rawDuration = video?.duration ? parseFloat(video.duration) : undefined
+      const durationSeconds =
+        rawDuration !== undefined && !isNaN(rawDuration) ? rawDuration : undefined
+      return { status: 'completed', videoUrl: video?.url, durationSeconds }
     }
     if (task_status === 'failed') {
       return { status: 'failed', error: task_status_msg ?? 'Generation failed' }

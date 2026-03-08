@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth/auth'
 import { createTextToVideoJob, createImageToVideoJob } from '@/lib/api/video-gen'
 import { getServiceSupabase } from '@/lib/api/supabase'
+import { buildVideoGenerationPrompt } from '@/lib/prompts/templates'
 import type { GenerationMode } from '@/types/scene'
 
 interface VideoGenBody {
@@ -41,7 +42,7 @@ export async function POST(request: Request): Promise<Response> {
 
     const { data: project } = await supabase
       .from('projects')
-      .select('user_id')
+      .select('user_id, category_id, sub_category_id')
       .eq('id', scene.project_id)
       .single()
     if (!project || project.user_id !== userId) {
@@ -56,12 +57,19 @@ export async function POST(request: Request): Promise<Response> {
       })
       .eq('id', sceneId)
 
+    // Apply category style prefix to prompt
+    const styledPrompt = buildVideoGenerationPrompt(
+      prompt,
+      project.category_id,
+      project.sub_category_id ?? undefined
+    )
+
     // Start generation job based on mode
     let taskId: string
     if (mode === 'text_to_video') {
-      taskId = await createTextToVideoJob(prompt, scene.duration_frames)
+      taskId = await createTextToVideoJob(styledPrompt, scene.duration_frames)
     } else {
-      taskId = await createImageToVideoJob(imageUrl!, prompt, scene.duration_frames)
+      taskId = await createImageToVideoJob(imageUrl!, styledPrompt, scene.duration_frames)
     }
 
     await supabase.from('scenes').update({ kling_task_id: taskId }).eq('id', sceneId)
