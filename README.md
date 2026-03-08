@@ -2,7 +2,7 @@
 
 > AI 시나리오 분석부터 영상 편집까지, 혼자서도 완성하는 AI 영상 제작 웹 서비스
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38bdf8?style=flat-square&logo=tailwindcss)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e?style=flat-square&logo=supabase)
@@ -35,7 +35,7 @@
 ### Remotion 기반 브라우저 에디터
 - 드래그&드롭 타임라인 장면 재배치
 - 전환 효과: 크로스페이드 / 암전 / 슬라이드
-- 모션 효과: 켄번즈 / 줌인 / 줌아웃 / 패닝
+- 모션 효과: 켄번즈 / 줌인 / 줌아웃 / 패닝 (이미지 장면에만 적용)
 - 장면 재생 시간 조절 (3~10초)
 - 장면 클릭 시 해당 위치로 Player 자동 이동
 
@@ -50,7 +50,7 @@
 
 | 구분 | 기술 |
 |------|------|
-| Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS |
+| Frontend | Next.js 16 (App Router), TypeScript, Tailwind CSS |
 | 상태 관리 | Zustand (클라이언트), TanStack Query (서버) |
 | 영상 편집 | Remotion |
 | AI 장면 분석 | Google Gemini 2.5 Flash |
