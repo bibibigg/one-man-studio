@@ -114,8 +114,9 @@ class KlingProvider implements VideoProvider {
     return data
   }
 
-  private toDuration(durationFrames: number): '5' | '10' {
-    return Math.round(durationFrames / 30) >= 8 ? '10' : '5'
+  private toDuration(durationFrames: number): string {
+    const seconds = Math.round(durationFrames / 30)
+    return String(Math.min(15, Math.max(3, seconds)))
   }
 
   async createTextToVideoJob(prompt: string, durationFrames: number): Promise<string> {
