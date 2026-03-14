@@ -119,7 +119,7 @@ export function SceneGenerationCard({
   }
 
   const handlePromptBlur = async () => {
-    if (!isIdle) return
+    if (!isIdle || isSaving) return
     const trimmed = localPrompt.trim()
     if (trimmed === '') {
       setLocalPrompt(visualPrompt)

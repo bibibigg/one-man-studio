@@ -77,8 +77,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return Response.json({ error: 'Scene not found' }, { status: 404 })
   }
 
-  const project = Array.isArray(scene.projects) ? scene.projects[0] : scene.projects
-  if ((project as { user_id: string }).user_id !== session.user.id) {
+  const project = (scene.projects as unknown) as { user_id: string }
+  if (project.user_id !== session.user.id) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -91,7 +91,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     .select('id')
     .single()
 
-  if (updateError || !updated) {
+  if (updateError) {
+    console.error('Scene update DB error:', updateError)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+  if (!updated) {
     // 소유권은 이미 확인했으므로 여기서 실패하면 상태 충돌
     return Response.json({ error: '생성 중이거나 완료된 씬은 수정할 수 없습니다' }, { status: 409 })
   }
