@@ -9,11 +9,18 @@ import { useEditorStore } from '@/lib/stores/editor'
 import { LIMITS } from '@/lib/utils/constants'
 import type { SceneGenState } from '@/lib/stores/generation'
 import type { EditorScene } from '@/types/editor'
+import type { GenerationMode } from '@/types/scene'
 
 import { SceneGenerationCard } from './SceneGenerationCard'
 
 interface GenerationWorkspaceProps {
   scenes: EditorScene[]
+}
+
+interface SceneUpdate {
+  generationMode?: GenerationMode
+  durationSeconds?: number
+  visualPrompt?: string
 }
 
 function sleep(ms: number): Promise<void> {
@@ -124,11 +131,12 @@ async function runGenerationPipeline(
   }
 }
 
-export function GenerationWorkspace({ scenes }: GenerationWorkspaceProps) {
+export function GenerationWorkspace({ scenes: initialScenes }: GenerationWorkspaceProps) {
   const router = useRouter()
   const { scenes: genScenes, isGenerating, setSceneState, setIsGenerating } = useGenerationStore()
   const { updateComposition } = useEditorStore()
   const [hasStarted, setHasStarted] = useState(false)
+  const [scenes, setScenes] = useState<EditorScene[]>(initialScenes)
   const abortRef = useRef<AbortController | null>(null)
 
   // Initialize scenes to idle (or completed if already generated)
@@ -149,6 +157,32 @@ export function GenerationWorkspace({ scenes }: GenerationWorkspaceProps) {
     return () => {
       abortRef.current?.abort()
     }
+  }, [])
+
+  const handleUpdate = useCallback(async (sceneId: string, data: SceneUpdate) => {
+    const res = await fetch(`/api/scenes/${sceneId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) {
+      const err = (await res.json()) as { error?: string }
+      throw new Error(err.error ?? '씬 업데이트 실패')
+    }
+    // 로컬 state 즉시 반영
+    setScenes((prev) =>
+      prev.map((s) => {
+        if (s.id !== sceneId) return s
+        return {
+          ...s,
+          ...(data.generationMode !== undefined && { generationMode: data.generationMode }),
+          ...(data.durationSeconds !== undefined && {
+            durationFrames: Math.round(data.durationSeconds * LIMITS.FPS),
+          }),
+          ...(data.visualPrompt !== undefined && { visualPrompt: data.visualPrompt }),
+        }
+      })
+    )
   }, [])
 
   const handleUpload = useCallback(
@@ -187,7 +221,6 @@ export function GenerationWorkspace({ scenes }: GenerationWorkspaceProps) {
       Promise.all(
         targetScenes.map((scene) =>
           limit(() => {
-            // Read latest uploaded URL at execution time (not closure capture time)
             const uploadedUrl = useGenerationStore.getState().scenes[scene.id]?.imageUrl
             return runGenerationPipeline(scene, uploadedUrl, setSceneState, updateComposition, controller.signal)
           })
@@ -240,10 +273,13 @@ export function GenerationWorkspace({ scenes }: GenerationWorkspaceProps) {
               index={i}
               description={scene.description}
               mode={scene.generationMode}
+              visualPrompt={scene.visualPrompt}
+              durationFrames={scene.durationFrames}
               referenceImageUrl={scene.referenceImageUrl}
               genState={genScenes[scene.id] ?? { status: 'idle' }}
               onUpload={handleUpload}
               onRetry={handleRetry}
+              onUpdate={handleUpdate}
               isGenerating={isGenerating}
             />
           ))}
@@ -264,7 +300,6 @@ export function GenerationWorkspace({ scenes }: GenerationWorkspaceProps) {
           <p className="text-center text-sm text-white/30">생성 중입니다. 잠시만 기다려주세요...</p>
         )}
 
-        {/* Phase 5: router.refresh() re-fetches scenes and switches to Remotion editor */}
         {allCompleted && (
           <button
             onClick={() => router.refresh()}
