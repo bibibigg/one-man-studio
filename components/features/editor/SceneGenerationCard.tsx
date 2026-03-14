@@ -1,10 +1,11 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
+import { useUIStore } from '@/lib/stores/ui'
 import { LIMITS } from '@/lib/utils/constants'
 import type { SceneGenState, SceneGenStatus } from '@/lib/stores/generation'
-import type { GenerationMode } from '@/types/scene'
+import type { GenerationMode, SceneUpdate } from '@/types/scene'
 
 const MODE_LABEL: Record<GenerationMode, string> = {
   text_to_video: 'T→V',
@@ -28,12 +29,6 @@ const STATUS_LABEL: Record<SceneGenStatus, string> = {
 }
 
 const ALL_MODES: GenerationMode[] = ['text_to_video', 'image_to_video', 'image_text_to_video']
-
-interface SceneUpdate {
-  generationMode?: GenerationMode
-  durationSeconds?: number
-  visualPrompt?: string
-}
 
 interface SceneGenerationCardProps {
   sceneId: string
@@ -64,10 +59,15 @@ export function SceneGenerationCard({
   onUpdate,
   isGenerating,
 }: SceneGenerationCardProps) {
+  const { showToast } = useUIStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [localPrompt, setLocalPrompt] = useState(visualPrompt)
   const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    setLocalPrompt(visualPrompt)
+  }, [visualPrompt])
 
   const hasReferenceImage = !!(referenceImageUrl || genState.imageUrl)
   const needsUpload = mode === 'image_text_to_video' && !hasReferenceImage
@@ -94,6 +94,8 @@ export function SceneGenerationCard({
     setIsSaving(true)
     try {
       await onUpdate(sceneId, { generationMode: newMode })
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '모드 변경에 실패했습니다', 'error')
     } finally {
       setIsSaving(false)
     }
@@ -109,6 +111,8 @@ export function SceneGenerationCard({
     setIsSaving(true)
     try {
       await onUpdate(sceneId, { durationSeconds: next })
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '시간 변경에 실패했습니다', 'error')
     } finally {
       setIsSaving(false)
     }
@@ -117,10 +121,17 @@ export function SceneGenerationCard({
   const handlePromptBlur = async () => {
     if (!isIdle) return
     const trimmed = localPrompt.trim()
-    if (trimmed === visualPrompt || trimmed === '') return
+    if (trimmed === '') {
+      setLocalPrompt(visualPrompt)
+      return
+    }
+    if (trimmed === visualPrompt) return
     setIsSaving(true)
     try {
       await onUpdate(sceneId, { visualPrompt: trimmed })
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '프롬프트 저장에 실패했습니다', 'error')
+      setLocalPrompt(visualPrompt)
     } finally {
       setIsSaving(false)
     }
@@ -224,10 +235,13 @@ export function SceneGenerationCard({
               onBlur={handlePromptBlur}
               disabled={isSaving}
               rows={3}
+              maxLength={2000}
               className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-white/80 placeholder-white/20 outline-none transition-all focus:border-white/30 disabled:opacity-50 resize-none"
               placeholder="AI 영상 생성에 사용할 시각적 묘사를 입력하세요"
             />
-            <p className="mt-1 text-xs text-white/20">포커스 해제 시 자동 저장</p>
+            <p className="mt-1 text-xs text-white/20">
+              포커스 해제 시 자동 저장 · {localPrompt.length}/2000
+            </p>
           </div>
         </div>
       )}

@@ -54,6 +54,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (typeof body.visualPrompt !== 'string' || body.visualPrompt.trim() === '') {
       return Response.json({ error: 'visualPrompt는 비어있을 수 없습니다' }, { status: 400 })
     }
+    if (body.visualPrompt.length > 2000) {
+      return Response.json({ error: 'visualPrompt는 2000자 이하여야 합니다' }, { status: 400 })
+    }
     updates.visual_prompt = body.visualPrompt.trim()
   }
 
@@ -79,16 +82,18 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // pending(idle) 상태인 씬만 수정 허용
-  if (scene.status !== 'pending') {
+  // UPDATE에 status 조건을 포함해 atomic하게 처리 (TOCTOU 방지)
+  const { data: updated, error: updateError } = await supabase
+    .from('scenes')
+    .update(updates)
+    .eq('id', sceneId)
+    .eq('status', 'pending')
+    .select('id')
+    .single()
+
+  if (updateError || !updated) {
+    // 소유권은 이미 확인했으므로 여기서 실패하면 상태 충돌
     return Response.json({ error: '생성 중이거나 완료된 씬은 수정할 수 없습니다' }, { status: 409 })
-  }
-
-  const { error: updateError } = await supabase.from('scenes').update(updates).eq('id', sceneId)
-
-  if (updateError) {
-    console.error('Failed to update scene:', updateError.message)
-    return Response.json({ error: '씬 업데이트에 실패했습니다' }, { status: 500 })
   }
 
   return Response.json({ success: true })

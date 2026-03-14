@@ -9,18 +9,12 @@ import { useEditorStore } from '@/lib/stores/editor'
 import { LIMITS } from '@/lib/utils/constants'
 import type { SceneGenState } from '@/lib/stores/generation'
 import type { EditorScene } from '@/types/editor'
-import type { GenerationMode } from '@/types/scene'
+import type { SceneUpdate } from '@/types/scene'
 
 import { SceneGenerationCard } from './SceneGenerationCard'
 
 interface GenerationWorkspaceProps {
   scenes: EditorScene[]
-}
-
-interface SceneUpdate {
-  generationMode?: GenerationMode
-  durationSeconds?: number
-  visualPrompt?: string
 }
 
 function sleep(ms: number): Promise<void> {
