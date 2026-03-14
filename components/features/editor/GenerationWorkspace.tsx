@@ -14,6 +14,7 @@ import type { SceneUpdate } from '@/types/scene'
 import { SceneGenerationCard } from './SceneGenerationCard'
 
 interface GenerationWorkspaceProps {
+  projectId: string
   scenes: EditorScene[]
 }
 
@@ -125,7 +126,7 @@ async function runGenerationPipeline(
   }
 }
 
-export function GenerationWorkspace({ scenes: initialScenes }: GenerationWorkspaceProps) {
+export function GenerationWorkspace({ projectId, scenes: initialScenes }: GenerationWorkspaceProps) {
   const router = useRouter()
   const { scenes: genScenes, isGenerating, setSceneState, setIsGenerating } = useGenerationStore()
   const { updateComposition } = useEditorStore()
@@ -296,7 +297,7 @@ export function GenerationWorkspace({ scenes: initialScenes }: GenerationWorkspa
 
         {allCompleted && (
           <button
-            onClick={() => router.refresh()}
+            onClick={() => router.push(`/editor/${projectId}`)}
             className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-black"
           >
             에디터로 이동 →
