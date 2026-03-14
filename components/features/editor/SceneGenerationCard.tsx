@@ -61,6 +61,8 @@ export function SceneGenerationCard({
 }: SceneGenerationCardProps) {
   const { showToast } = useUIStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // isExpanded 초기값 false — 실패 후 handleRetry로 status가 idle로 복귀해도
+  // isExpanded는 false로 유지되어 설정 패널이 자동 재오픈되지 않는다. 의도된 동작.
   const [isExpanded, setIsExpanded] = useState(false)
   const [localPrompt, setLocalPrompt] = useState(visualPrompt)
   const [isSaving, setIsSaving] = useState(false)
@@ -70,6 +72,8 @@ export function SceneGenerationCard({
   }, [visualPrompt])
 
   const hasReferenceImage = !!(referenceImageUrl || genState.imageUrl)
+  // image_text_to_video 전환 후 참조 이미지 안내는 needsUpload 조건부 업로드 버튼(하단)과
+  // GenerationWorkspace의 canStart 가드("참조 이미지를 먼저 업로드해주세요")로 이미 처리됨.
   const needsUpload = mode === 'image_text_to_video' && !hasReferenceImage
 
   const isActive =

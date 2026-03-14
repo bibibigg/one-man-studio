@@ -3,7 +3,12 @@ import { getServiceSupabase } from '@/lib/api/supabase'
 import { LIMITS } from '@/lib/utils/constants'
 import type { GenerationMode } from '@/types/scene'
 
-const VALID_MODES: GenerationMode[] = ['text_to_video', 'image_to_video', 'image_text_to_video']
+// satisfies로 GenerationMode와 컴파일 타임 동기화 보장 — 타입에 새 값 추가 시 에러 발생
+const VALID_MODES = [
+  'text_to_video',
+  'image_to_video',
+  'image_text_to_video',
+] as const satisfies readonly GenerationMode[]
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -67,6 +72,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const supabase = getServiceSupabase()
 
   // 소유권 확인: scenes → projects join
+  // status는 SELECT하지만 직접 사용하지 않음 — 아래 UPDATE의 .eq('status', 'pending') 조건으로
+  // atomic하게 처리해 TOCTOU를 방지. SELECT 결과로 분기하면 레이스 컨디션이 생긴다.
   const { data: scene, error: fetchError } = await supabase
     .from('scenes')
     .select('id, status, projects!inner(user_id)')

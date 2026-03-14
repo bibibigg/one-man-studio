@@ -131,6 +131,8 @@ export function GenerationWorkspace({ projectId, scenes: initialScenes }: Genera
   const { scenes: genScenes, isGenerating, setSceneState, setIsGenerating } = useGenerationStore()
   const { updateComposition } = useEditorStore()
   const [hasStarted, setHasStarted] = useState(false)
+  // 서버 초기값을 로컬 편집 state로 복사 — 생성 시작 전 모드/프롬프트 변경을 낙관적으로 반영하기 위함.
+  // props 재동기화 없음은 의도적: 이 컴포넌트가 마운트된 후 부모가 새 scenes를 내려주는 경로가 없다.
   const [scenes, setScenes] = useState<EditorScene[]>(initialScenes)
   const abortRef = useRef<AbortController | null>(null)
 
