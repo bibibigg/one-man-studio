@@ -33,6 +33,7 @@ interface CreateState {
   setAnalysisResult: (projectId: string, scenes: AnalyzedScene[]) => void
   updateSceneVisualPrompt: (sceneId: string, visualPrompt: string) => void
   updateSceneMode: (sceneId: string, mode: GenerationMode) => void
+  updateSceneDuration: (sceneId: string, durationFrames: number) => void
   reset: () => void
 }
 
@@ -72,6 +73,13 @@ export const useCreateStore = create<CreateState>((set) => ({
     set((state) => ({
       analyzedScenes: state.analyzedScenes.map((s) =>
         s.id === sceneId ? { ...s, generationMode: mode } : s
+      ),
+    })),
+
+  updateSceneDuration: (sceneId, durationFrames) =>
+    set((state) => ({
+      analyzedScenes: state.analyzedScenes.map((s) =>
+        s.id === sceneId ? { ...s, durationFrames } : s
       ),
     })),
 

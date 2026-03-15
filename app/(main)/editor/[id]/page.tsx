@@ -74,5 +74,5 @@ export default async function EditorPage({ params }: Props) {
     )
   }
 
-  return <GenerationWorkspace scenes={scenes} />
+  return <GenerationWorkspace projectId={project.id} scenes={scenes} />
 }

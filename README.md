@@ -67,6 +67,15 @@
 
 ---
 
+## CI/CD
+
+PR 생성 시 Claude Code가 자동으로 코드 리뷰 코멘트를 게시합니다.
+
+- 워크플로우: `.github/workflows/claude-code-review.yml`
+- 상세 설정: [GIT_STRATEGY.md](./GIT_STRATEGY.md#claude-code-자동-코드-리뷰)
+
+---
+
 ## 환경 변수
 
 `.env.local` 파일을 생성하고 아래 값을 설정하세요.

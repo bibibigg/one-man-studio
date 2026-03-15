@@ -14,7 +14,7 @@ interface SceneCardProps {
 }
 
 export function SceneCard({ scene, index }: SceneCardProps) {
-  const { updateSceneVisualPrompt, updateSceneMode } = useCreateStore()
+  const { updateSceneVisualPrompt, updateSceneMode, updateSceneDuration } = useCreateStore()
   const [isEditing, setIsEditing] = useState(false)
   const [draftPrompt, setDraftPrompt] = useState(scene.visualPrompt)
 
@@ -24,6 +24,14 @@ export function SceneCard({ scene, index }: SceneCardProps) {
   }, [scene.visualPrompt, isEditing])
 
   const durationSeconds = Math.round(scene.durationFrames / LIMITS.FPS)
+
+  const handleDurationChange = (delta: number) => {
+    const next = Math.min(
+      LIMITS.SCENE_MAX_DURATION_SECONDS,
+      Math.max(LIMITS.SCENE_MIN_DURATION_SECONDS, durationSeconds + delta)
+    )
+    updateSceneDuration(scene.id, next * LIMITS.FPS)
+  }
 
   const handleSavePrompt = () => {
     if (draftPrompt.trim()) {
@@ -50,7 +58,25 @@ export function SceneCard({ scene, index }: SceneCardProps) {
           </span>
           <p className="text-sm font-medium text-white">{scene.description}</p>
         </div>
-        <span className="shrink-0 text-xs text-white/30">{durationSeconds}s</span>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            onClick={() => handleDurationChange(-1)}
+            disabled={durationSeconds <= LIMITS.SCENE_MIN_DURATION_SECONDS}
+            className="flex h-5 w-5 items-center justify-center rounded text-white/40 transition-colors hover:bg-white/10 hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-20"
+            aria-label="영상 길이 줄이기"
+          >
+            −
+          </button>
+          <span className="w-8 text-center text-xs text-white/50">{durationSeconds}s</span>
+          <button
+            onClick={() => handleDurationChange(1)}
+            disabled={durationSeconds >= LIMITS.SCENE_MAX_DURATION_SECONDS}
+            className="flex h-5 w-5 items-center justify-center rounded text-white/40 transition-colors hover:bg-white/10 hover:text-white/70 disabled:cursor-not-allowed disabled:opacity-20"
+            aria-label="영상 길이 늘리기"
+          >
+            +
+          </button>
+        </div>
       </div>
 
       <div className="mb-3">
