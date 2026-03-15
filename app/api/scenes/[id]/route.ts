@@ -33,7 +33,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   if (body.generationMode !== undefined) {
     if (!VALID_MODES.includes(body.generationMode as GenerationMode)) {
-      return Response.json({ error: 'Invalid generationMode' }, { status: 400 })
+      return Response.json({ error: '유효하지 않은 generationMode입니다' }, { status: 400 })
     }
     updates.generation_mode = body.generationMode
   }
@@ -84,6 +84,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return Response.json({ error: 'Scene not found' }, { status: 404 })
   }
 
+  // Supabase !inner 조인 결과는 배열로 추론되지만 실제론 단일 객체 — 제네릭 한계로 이중 캐스팅
   const project = (scene.projects as unknown) as { user_id: string }
   if (project.user_id !== session.user.id) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
@@ -96,7 +97,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     .eq('id', sceneId)
     .eq('status', 'pending')
     .select('id')
-    .single()
+    .maybeSingle()
 
   if (updateError) {
     console.error('Scene update DB error:', updateError)
