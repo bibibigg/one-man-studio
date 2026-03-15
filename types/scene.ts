@@ -78,3 +78,10 @@ export interface SceneAnalysisResult {
   visualPrompt: string
   duration: number
 }
+
+/** Payload for PUT /api/scenes/[id] */
+export interface SceneUpdate {
+  generationMode?: GenerationMode
+  durationSeconds?: number
+  visualPrompt?: string
+}
