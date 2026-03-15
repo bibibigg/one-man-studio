@@ -103,7 +103,7 @@ gh pr create --base develop --title "hotfix: develop에 반영"
 PR이 생성·업데이트될 때 GitHub Actions가 Claude Code를 실행하여 자동으로 코드 리뷰 코멘트를 달아줍니다.
 
 - **워크플로우 파일**: `.github/workflows/claude-code-review.yml`
-- **트리거**: PR `opened`, `synchronize`, `ready_for_review`, `reopened`
+- **트리거**: PR `opened`, `synchronize`, `ready_for_review`, `reopened` (`main` 브랜치 PR 제외)
 - **리뷰 언어**: 한국어
 
 ### 동작 방식
@@ -118,8 +118,6 @@ anthropics/claude-code-action@v1 실행
 Claude가 PR diff를 읽고 분석
     ↓
 gh pr comment 로 리뷰 코멘트 게시
-    ↓ (선택적)
-mcp__github_inline_comment__create_inline_comment 로 인라인 코멘트 추가
 ```
 
 ### 초기 설치 방법
@@ -159,7 +157,6 @@ GitHub Repository → Settings → Secrets and variables → Actions
 | `Bash(gh pr comment:*)` | PR 최상단에 리뷰 코멘트 게시 |
 | `Bash(gh pr diff:*)` | PR의 변경 사항 diff 읽기 |
 | `Bash(gh pr view:*)` | PR 메타정보(제목, 설명) 읽기 |
-| `mcp__github_inline_comment__create_inline_comment` | 특정 코드 줄에 인라인 코멘트 추가 |
 
 ### 워크플로우 파일 전체
 
@@ -169,6 +166,8 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
+    branches-ignore:
+      - main
 
 jobs:
   claude-review:
@@ -203,7 +202,7 @@ jobs:
             Use `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`) to highlight specific code issues.
             Always post a review comment regardless of change size. Write the review in Korean.
 
-          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"'
+          claude_args: '--model claude-sonnet-4-6 --max-turns 10 --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"'
 ```
 
 ### 주의사항
