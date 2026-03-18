@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUser } from '@/lib/auth/server'
 
 export const metadata: Metadata = {
   title: '내 프로젝트 - One Man Studio',
@@ -22,9 +22,9 @@ function toProjectStatus(value: string): ProjectStatus {
 }
 
 export default async function DashboardPage() {
-  const session = await auth()
+  const user = await getAuthenticatedUser()
 
-  if (!session?.user?.id) {
+  if (!user) {
     redirect('/login')
   }
 
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
   const { data: projects } = await supabase
     .from('projects')
     .select('id, name, status, thumbnail_url, final_video_url, updated_at')
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .order('updated_at', { ascending: false })
 
   const typedProjects: ProjectRow[] = (projects ?? []).map((p) => ({
@@ -53,7 +53,7 @@ export default async function DashboardPage() {
           <div>
             <h1 className="text-2xl font-semibold text-white">내 프로젝트</h1>
             <p className="mt-1 text-sm text-white/40">
-              {session.user.name ?? session.user.email}
+              {(user.user_metadata?.full_name as string | undefined) ?? user.email}
             </p>
           </div>
           <Link

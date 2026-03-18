@@ -1,13 +1,12 @@
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { generateImage } from '@/lib/api/image-gen'
 import { getServiceSupabase } from '@/lib/api/supabase'
 
 export async function POST(request: Request): Promise<Response> {
   let sceneId: string | undefined
   try {
-    const session = await auth()
-    if (!session?.user?.id) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    const userId = session.user.id
+    const userId = await getAuthenticatedUserId()
+    if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = (await request.json()) as { sceneId: string; prompt: string }
     sceneId = body.sceneId

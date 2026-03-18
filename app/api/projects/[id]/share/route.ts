@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { getServiceSupabase } from '@/lib/api/supabase'
 
 interface Props {
@@ -16,8 +16,8 @@ function generateShareToken(): string {
 export async function POST(_req: Request, { params }: Props) {
   const { id } = await params
 
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -27,7 +27,7 @@ export async function POST(_req: Request, { params }: Props) {
     .from('projects')
     .select('id, share_token, status, final_video_url')
     .eq('id', id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', userId)
     .single()
 
   if (!project) {

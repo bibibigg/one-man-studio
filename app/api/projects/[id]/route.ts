@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { getServiceSupabase } from '@/lib/api/supabase'
 import type { SceneCompositionState } from '@/lib/stores/editor'
 
@@ -9,8 +9,8 @@ interface Props {
 export async function GET(_req: Request, { params }: Props) {
   const { id } = await params
 
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -22,7 +22,7 @@ export async function GET(_req: Request, { params }: Props) {
       'id, name, status, thumbnail_url, final_video_url, share_token, scenario, created_at, updated_at'
     )
     .eq('id', id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', userId)
     .single()
 
   // PGRST116 = "no rows returned" — legitimate 404, not a DB error
@@ -41,8 +41,8 @@ export async function GET(_req: Request, { params }: Props) {
 export async function DELETE(_req: Request, { params }: Props) {
   const { id } = await params
 
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -53,7 +53,7 @@ export async function DELETE(_req: Request, { params }: Props) {
     .from('projects')
     .select('id')
     .eq('id', id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', userId)
     .single()
 
   if (!project) {
@@ -73,8 +73,8 @@ export async function DELETE(_req: Request, { params }: Props) {
 export async function PUT(req: Request, { params }: Props) {
   const { id } = await params
 
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -93,7 +93,7 @@ export async function PUT(req: Request, { params }: Props) {
     .from('projects')
     .select('id')
     .eq('id', id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', userId)
     .single()
 
   if (!project) {

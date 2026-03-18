@@ -1,6 +1,6 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
+import { getSupabaseBrowserClient } from '@/lib/auth/client'
 import { cn } from '@/lib/utils/cn'
 
 interface LoginButtonProps {
@@ -8,10 +8,20 @@ interface LoginButtonProps {
   className?: string
 }
 
-export function LoginButton({ className }: LoginButtonProps) {
+export function LoginButton({ provider, className }: LoginButtonProps) {
+  const handleLogin = async () => {
+    const supabase = getSupabaseBrowserClient()
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
+    })
+  }
+
   return (
     <button
-      onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+      onClick={handleLogin}
       className={cn(
         'flex w-full items-center justify-center gap-3 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-gray-800',
         className
