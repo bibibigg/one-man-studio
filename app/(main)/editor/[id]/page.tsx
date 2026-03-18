@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 
 export const metadata: Metadata = {
   title: '에디터 - One Man Studio',
@@ -21,8 +21,8 @@ interface Props {
 export default async function EditorPage({ params }: Props) {
   const { id } = await params
 
-  const session = await auth()
-  if (!session?.user?.id) redirect('/login')
+  const userId = await getAuthenticatedUserId()
+  if (!userId) redirect('/login')
 
   const supabase = getServiceSupabase()
 
@@ -30,7 +30,7 @@ export default async function EditorPage({ params }: Props) {
     .from('projects')
     .select('id, name, composition_state')
     .eq('id', id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', userId)
     .single()
 
   if (!project) notFound()

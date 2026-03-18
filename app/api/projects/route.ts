@@ -1,10 +1,10 @@
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { getServiceSupabase } from '@/lib/api/supabase'
 import { checkProjectRateLimit } from '@/lib/utils/rate-limit'
 
 export async function GET() {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -15,7 +15,7 @@ export async function GET() {
     .select(
       'id, name, status, thumbnail_url, final_video_url, share_token, created_at, updated_at'
     )
-    .eq('user_id', session.user.id)
+    .eq('user_id', userId)
     .order('updated_at', { ascending: false })
 
   if (error) {
@@ -27,8 +27,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'name and scenario are required' }, { status: 400 })
   }
 
-  const rateLimit = await checkProjectRateLimit(session.user.id)
+  const rateLimit = await checkProjectRateLimit(userId)
   if (!rateLimit.allowed) {
     return Response.json({ error: rateLimit.message }, { status: 429 })
   }
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   const { data: project, error } = await supabase
     .from('projects')
     .insert({
-      user_id: session.user.id,
+      user_id: userId,
       name: body.name,
       category_id: body.categoryId ?? 'movie',
       sub_category_id: body.subCategoryId ?? null,

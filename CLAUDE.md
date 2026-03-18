@@ -40,7 +40,8 @@ npm run lint         # Run ESLint
 ### Route Structure (App Router)
 
 **Authentication Layer**:
-- `(auth)/login` - NextAuth.js v5 social login (Google OAuth)
+- `(auth)/login` - Supabase Auth social login (Google OAuth)
+- `auth/callback` - PKCE OAuth 콜백 핸들러 (모든 OAuth 제공자 공통)
 
 **Main Application**:
 - `(main)/dashboard` - Project list and status
@@ -49,7 +50,6 @@ npm run lint         # Run ESLint
 - `(main)/preview/[id]` - View and share completed videos
 
 **API Routes**:
-- `api/auth/[...nextauth]` - NextAuth.js handler
 - `api/scenes/analyze` - LLM scenario analysis and scene generation
 - `api/scenes/[id]` - Scene update (PUT)
 - `api/generate/image` - AI image generation (Image→Video mode step 1)
@@ -64,9 +64,9 @@ npm run lint         # Run ESLint
 - `lib/api/llm.ts` - Gemini 2.5 Flash client for scenario analysis
 - `lib/api/video-gen.ts` - Kling AI V3 video generation (3 modes)
 - `lib/api/image-gen.ts` - AI image generation client
-- `lib/api/supabase.ts` - Supabase client initialization
-- `lib/auth/auth.config.ts` - NextAuth.js v5 configuration (edge compatible)
-- `lib/auth/auth.ts` - NextAuth.js with Supabase adapter
+- `lib/api/supabase.ts` - Supabase service role client (`getServiceSupabase()` — DB 조작 전용)
+- `lib/auth/server.ts` - 서버 사이드 Supabase 인증 헬퍼 (`getAuthenticatedUserId`, `getAuthenticatedUser`)
+- `lib/auth/client.ts` - 브라우저 사이드 Supabase 싱글톤 클라이언트 (`getSupabaseBrowserClient`)
 - `lib/prompts/templates.ts` - Category-specific prompt template engine
 - `lib/prompts/scene-splitter.ts` - LLM prompt for scene splitting
 - `lib/stores/` - Zustand stores (ui, create, editor, generation)
@@ -75,7 +75,8 @@ npm run lint         # Run ESLint
 
 ### Database Schema (Supabase PostgreSQL)
 
-Key tables: `users`, `accounts`, `sessions` (NextAuth — `next_auth` schema), `categories`, `sub_categories`, `prompt_templates`, `projects`, `scenes` (public schema)
+Key tables: `categories`, `sub_categories`, `prompt_templates`, `projects`, `scenes` (public schema)
+Auth: Supabase 내장 `auth.users` 테이블 사용 (next_auth 스키마 제거됨)
 
 **Scenes table** supports 3 generation modes via `generation_mode` column: `text_to_video` | `image_to_video` | `image_text_to_video`
 
@@ -83,7 +84,7 @@ Key tables: `users`, `accounts`, `sessions` (NextAuth — `next_auth` schema), `
 
 ### Confirmed Technical Decisions
 
-- **Auth**: Google OAuth only (GitHub removed)
+- **Auth**: Supabase Auth + Google OAuth (`@supabase/ssr` 기반, NextAuth.js 제거됨)
 - **Middleware**: `proxy.ts` (Next.js 16 renamed from `middleware.ts`, runs on Node.js runtime)
 - **Video storage**: Kling CDN URLs stored directly in DB — no Supabase Storage re-upload (Vercel timeout constraint)
 - **`duration_frames`**: Updated from Kling actual response on generation complete
@@ -94,18 +95,10 @@ Key tables: `users`, `accounts`, `sessions` (NextAuth — `next_auth` schema), `
 Required in `.env.local`:
 
 ```env
-# NextAuth.js
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=
-
-# Google OAuth
-AUTH_GOOGLE_ID=
-AUTH_GOOGLE_SECRET=
-
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 
 # LLM API
 GOOGLE_API_KEY=          # Gemini 2.5 Flash
@@ -114,6 +107,8 @@ GOOGLE_API_KEY=          # Gemini 2.5 Flash
 KLING_ACCESS_KEY=        # Kling AI V3
 KLING_SECRET_KEY=
 ```
+
+Google OAuth Client ID/Secret은 `.env.local`에 두지 않고 Supabase Dashboard → Authentication → Providers → Google에서 직접 관리한다.
 
 ## Import Path Alias
 
@@ -245,8 +240,8 @@ function processData(data: unknown): number[] {
 ```typescript
 export async function POST(request: Request) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
     // Logic...

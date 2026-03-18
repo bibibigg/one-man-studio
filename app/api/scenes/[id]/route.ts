@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { getServiceSupabase } from '@/lib/api/supabase'
 import { LIMITS } from '@/lib/utils/constants'
 import type { GenerationMode } from '@/types/scene'
@@ -11,8 +11,8 @@ const VALID_MODES = [
 ] as const satisfies readonly GenerationMode[]
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserId()
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -86,7 +86,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   // Supabase !inner 조인 결과는 배열로 추론되지만 실제론 단일 객체 — 제네릭 한계로 이중 캐스팅
   const project = (scene.projects as unknown) as { user_id: string }
-  if (project.user_id !== session.user.id) {
+  if (project.user_id !== userId) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 

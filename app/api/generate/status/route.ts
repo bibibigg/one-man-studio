@@ -1,13 +1,12 @@
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { getVideoJobStatus } from '@/lib/api/video-gen'
 import { getServiceSupabase } from '@/lib/api/supabase'
 import type { GenerationMode } from '@/types/scene'
 
 export async function GET(request: Request): Promise<Response> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    const userId = session.user.id
+    const userId = await getAuthenticatedUserId()
+    if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
     const sceneId = searchParams.get('sceneId')
