@@ -18,12 +18,12 @@ NextAuth.js v5에서 마이그레이션 완료 (2026-03-18).
 LoginButton → supabase.auth.signInWithOAuth({ provider: 'google' })
     ↓
 Google OAuth 동의 화면
-("xmxyezvfmvxdnbbaocec.supabase.co(으)로 이동" 표시 — 정상 동작)
+("<your-project-ref>.supabase.co(으)로 이동" 표시 — 정상 동작)
     ↓
 사용자가 Google 계정 선택 및 동의
     ↓
 Google → Supabase Auth 서버 콜백
-(https://xmxyezvfmvxdnbbaocec.supabase.co/auth/v1/callback)
+(https://<your-project-ref>.supabase.co/auth/v1/callback)
     ↓
 Supabase Auth가 토큰 교환 처리
     ↓
@@ -42,11 +42,11 @@ app/auth/callback/route.ts — exchangeCodeForSession(code) 실행
 
 ### 왜 발생하는가
 
-Supabase Auth가 OAuth 중간자(intermediary) 역할을 한다. Google에 등록된 Authorized redirect URI가 Supabase 서버 주소이기 때문에, Google 동의 화면에서 "xmxyezvfmvxdnbbaocec.supabase.co(으)로 이동"이 표시된다.
+Supabase Auth가 OAuth 중간자(intermediary) 역할을 한다. Google에 등록된 Authorized redirect URI가 Supabase 서버 주소이기 때문에, Google 동의 화면에서 "<your-project-ref>.supabase.co(으)로 이동"이 표시된다.
 
 ### 보안 문제인가
 
-**보안 문제가 아니다.** Supabase 프로젝트 ID(`xmxyezvfmvxdnbbaocec`)가 노출되어도:
+**보안 문제가 아니다.** Supabase 프로젝트 ID(`<your-project-ref>`)가 노출되어도:
 - anon key나 service role key 없이는 DB에 접근 불가
 - URL 자체는 공개 정보로 취급해도 무방
 
@@ -152,7 +152,7 @@ proxy.ts  — 미들웨어: 보호 경로 접근 제어 + 세션 갱신
 
 3. **Google Cloud Console → OAuth 앱 → Authorized redirect URIs**
    ```
-   https://xmxyezvfmvxdnbbaocec.supabase.co/auth/v1/callback
+   https://<your-project-ref>.supabase.co/auth/v1/callback
    ```
    구 NextAuth URL(`/api/auth/callback/google`)은 제거해도 됨 (develop 브랜치 머지 후)
 
