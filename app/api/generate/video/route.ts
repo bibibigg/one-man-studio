@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { createTextToVideoJob, createImageToVideoJob } from '@/lib/api/video-gen'
 import { getServiceSupabase } from '@/lib/api/supabase'
 import { buildVideoGenerationPrompt } from '@/lib/prompts/templates'
@@ -14,9 +14,8 @@ interface VideoGenBody {
 export async function POST(request: Request): Promise<Response> {
   let sceneId: string | undefined
   try {
-    const session = await auth()
-    if (!session?.user?.id) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    const userId = session.user.id
+    const userId = await getAuthenticatedUserId()
+    if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = (await request.json()) as VideoGenBody
     sceneId = body.sceneId

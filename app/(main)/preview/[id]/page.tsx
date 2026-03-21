@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { getServiceSupabase } from '@/lib/api/supabase'
 import { VideoPlayer } from '@/components/features/preview/VideoPlayer'
 import { ShareButton } from '@/components/features/preview/ShareButton'
@@ -51,14 +51,14 @@ export default async function PreviewPage({ params, searchParams }: Props) {
   }
 
   // Require auth for owner access
-  const session = await auth()
-  if (!session?.user?.id) redirect('/login')
+  const userId = await getAuthenticatedUserId()
+  if (!userId) redirect('/login')
 
   const { data: project } = await supabase
     .from('projects')
     .select('id, name, final_video_url, share_token, status')
     .eq('id', id)
-    .eq('user_id', session.user.id)
+    .eq('user_id', userId)
     .single()
 
   if (!project) notFound()

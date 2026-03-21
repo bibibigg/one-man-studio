@@ -1,6 +1,7 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
+import { useState } from 'react'
+import { getSupabaseBrowserClient } from '@/lib/auth/client'
 import { cn } from '@/lib/utils/cn'
 
 interface LoginButtonProps {
@@ -8,15 +9,33 @@ interface LoginButtonProps {
   className?: string
 }
 
-export function LoginButton({ className }: LoginButtonProps) {
+export function LoginButton({ provider, className }: LoginButtonProps) {
+  const [error, setError] = useState<string | null>(null)
+
+  const handleLogin = async () => {
+    setError(null)
+    const supabase = getSupabaseBrowserClient()
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
+    })
+    if (oauthError) {
+      console.error('OAuth 로그인 실패:', oauthError.message)
+      setError('로그인에 실패했습니다. 다시 시도해주세요.')
+    }
+  }
+
   return (
-    <button
-      onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
-      className={cn(
-        'flex w-full items-center justify-center gap-3 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-gray-800',
-        className
-      )}
-    >
+    <div className="w-full">
+      <button
+        onClick={handleLogin}
+        className={cn(
+          'flex w-full items-center justify-center gap-3 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-gray-800',
+          className
+        )}
+      >
       <svg className="h-5 w-5" viewBox="0 0 24 24">
         <path
           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
@@ -35,7 +54,9 @@ export function LoginButton({ className }: LoginButtonProps) {
           fill="#EA4335"
         />
       </svg>
-      Google로 계속하기
-    </button>
+        Google로 계속하기
+      </button>
+      {error && <p className="mt-2 text-center text-sm text-red-400">{error}</p>}
+    </div>
   )
 }

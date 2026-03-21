@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { analyzeScenario } from '@/lib/api/llm'
 import { getServiceSupabase } from '@/lib/api/supabase'
 import { LIMITS } from '@/lib/utils/constants'
@@ -18,11 +18,10 @@ export async function POST(request: Request) {
     const { scenario, categoryId, subCategoryId, customPrompt } = body
 
     // 2. Auth check
-    const session = await auth()
-    if (!session?.user?.id) {
+    const userId = await getAuthenticatedUserId()
+    if (!userId) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const userId = session.user.id
 
     // 3. Input validation (length limits prevent LLM cost abuse)
     const trimmedScenario = scenario?.trim() ?? ''

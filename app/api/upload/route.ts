@@ -1,12 +1,11 @@
-import { auth } from '@/lib/auth/auth'
+import { getAuthenticatedUserId } from '@/lib/auth/server'
 import { getServiceSupabase } from '@/lib/api/supabase'
 import { ALLOWED_IMAGE_TYPES, LIMITS } from '@/lib/utils/constants'
 
 export async function POST(request: Request): Promise<Response> {
   try {
-    const session = await auth()
-    if (!session?.user?.id) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-    const userId = session.user.id
+    const userId = await getAuthenticatedUserId()
+    if (!userId) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
     const formData = await request.formData()
     const file = formData.get('file') as File | null
